@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Personal Assistant - Hugging Face Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #667eea; color: white; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; color: black; }
+        input, textarea { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; }
+        button { background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .message { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .user { background: #667eea; color: white; }
+        .error { background: #ff6b6b; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Personal Assistant Test</h1>
+        
+        <div>
+            <label>Endpoint URL:</label>
+            <input type="url" id="endpoint" value="https://genwaiyu5zk2r2g.us-east4.gcp.endpoints.huggingface.cloud/v1/chat/completions">
+        </div>
+        
+        <div>
+            <label>API Token:</label>
+            <input type="password" id="token" placeholder="hf_your_token_here">
+        </div>
+        
+        <button onclick="testConnection()">Test Connection</button>
+        <button onclick="sendMessage()">Send Test Message</button>
+        
+        <div>
+            <label>Your Message:</label>
+            <textarea id="message" placeholder="Hello! Help me plan my day">Hello! Help me plan my day</textarea>
+        </div>
+        
+        <div id="output"></div>
+        
+        <script>
+            async function testConnection() {
+                const endpoint = document.getElementById('endpoint').value;
+                const token = document.getElementById('token').value;
+                const output = document.getElementById('output');
+                
+                if (!token) {
+                    output.innerHTML = '<div class="error">Please enter your API token</div>';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            model: "tgi",
+                            messages: [{"role": "user", "content": "Hello"}],
+                            max_tokens: 50
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        output.innerHTML = '<div class="message">✅ Connection successful! Response: ' + JSON.stringify(data, null, 2) + '</div>';
+                    } else {
+                        const errorText = await response.text();
+                        output.innerHTML = '<div class="error">❌ HTTP ' + response.status + ': ' + errorText + '</div>';
+                    }
+                } catch (error) {
+                    output.innerHTML = '<div class="error">❌ Error: ' + error.message + '</div>';
+                }
+            }
+            
+            async function sendMessage() {
+                const endpoint = document.getElementById('endpoint').value;
+                const token = document.getElementById('token').value;
+                const message = document.getElementById('message').value;
+                const output = document.getElementById('output');
+                
+                if (!token) {
+                    output.innerHTML = '<div class="error">Please enter your API token</div>';
+                    return;
+                }
+                
+                try {
+                    output.innerHTML = '<div class="message">🔄 Sending message...</div>';
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            model: "tgi",
+                            messages: [{"role": "user", "content": message}],
+                            max_tokens: 500,
+                            temperature: 0.7
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const aiResponse = data.choices[0].message.content;
+                        output.innerHTML = `
+                            <div class="message user">You: ${message}</div>
+                            <div class="message">AI: ${aiResponse}</div>
+                        `;
+                    } else {
+                        const errorText = await response.text();
+                        output.innerHTML = '<div class="error">❌ HTTP ' + response.status + ': ' + errorText + '</div>';
+                    }
+                } catch (error) {
+                    output.innerHTML = '<div class="error">❌ Error: ' + error.message + '</div>';
+                }
+            }
+        </script>
+    </div>
+</body>
+</html>
