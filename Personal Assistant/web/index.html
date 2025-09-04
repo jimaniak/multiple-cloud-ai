@@ -380,23 +380,49 @@ To get started, please configure your service URL in the panel above, then ask m
             updateStatus('🔄 Testing connection...', '');
             
             try {
-                const response = await fetch(`${API_URL}/api/tags`, {
-                    method: 'GET',
-                    timeout: 5000
-                });
+                const isHuggingFace = API_URL.includes('huggingface.cloud');
+                const apiToken = localStorage.getItem('hf_api_token');
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    isConnected = true;
-                    updateStatus('✅ Connected successfully!', 'connected');
+                let testUrl, headers;
+                
+                if (isHuggingFace) {
+                    // Test Hugging Face endpoint with a simple chat completion
+                    testUrl = API_URL.includes('/v1/') ? API_URL : `${API_URL}/v1/chat/completions`;
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiToken}`
+                    };
                     
-                    // Show available models if any
-                    if (data.models && data.models.length > 0) {
-                        const modelNames = data.models.map(m => m.name).join(', ');
-                        updateStatus(`✅ Connected! Models: ${modelNames}`, 'connected');
+                    const response = await fetch(testUrl, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({
+                            model: "tgi",
+                            messages: [{"role": "user", "content": "Hello"}],
+                            max_tokens: 10
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        isConnected = true;
+                        updateStatus('✅ Connected to Hugging Face!', 'connected');
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
                 } else {
-                    throw new Error(`HTTP ${response.status}`);
+                    // Test Ollama endpoint
+                    const response = await fetch(`${API_URL}/api/tags`, {
+                        method: 'GET',
+                        timeout: 5000
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        isConnected = true;
+                        updateStatus('✅ Connected successfully!', 'connected');
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
                 }
             } catch (error) {
                 isConnected = false;
