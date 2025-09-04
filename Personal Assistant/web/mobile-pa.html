@@ -724,6 +724,11 @@ Tap the tools button (🛠️) to see available tools, or just start chatting!
             </div>
             
             <div class="form-group">
+                <label class="form-label">API Token (for Hugging Face)</label>
+                <input type="password" class="form-input" id="apiToken" placeholder="hf_your_token_here">
+            </div>
+            
+            <div class="form-group">
                 <label class="form-label">Model Name</label>
                 <input type="text" class="form-input" id="modelName" value="phi3:mini">
             </div>
@@ -1002,21 +1007,49 @@ Tap the tools button (🛠️) to see available tools, or just start chatting!
                     enhancedPrompt = `Available tools:\n${toolContext}\n\nUser request: ${message}`;
                 }
 
-                const response = await fetch(`${settings.serviceUrl}/api/generate`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: settings.modelName,
-                        prompt: enhancedPrompt,
-                        stream: false,
-                        options: {
+                // Check if it's a Hugging Face endpoint
+                const isHuggingFace = settings.serviceUrl.includes('huggingface.cloud');
+                
+                let response;
+                if (isHuggingFace) {
+                    // Hugging Face format (OpenAI compatible)
+                    response = await fetch(settings.serviceUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('hf_api_token') || 'hf_token_needed'}`
+                        },
+                        body: JSON.stringify({
+                            model: "tgi",
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: enhancedPrompt
+                                }
+                            ],
+                            stream: false,
                             temperature: settings.temperature,
                             max_tokens: settings.maxLength
-                        }
-                    })
-                });
+                        })
+                    });
+                } else {
+                    // Ollama format (original)
+                    response = await fetch(`${settings.serviceUrl}/api/generate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: settings.modelName,
+                            prompt: enhancedPrompt,
+                            stream: false,
+                            options: {
+                                temperature: settings.temperature,
+                                max_tokens: settings.maxLength
+                            }
+                        })
+                    });
+                }
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -1134,6 +1167,12 @@ Tap the tools button (🛠️) to see available tools, or just start chatting!
             settings.modelName = document.getElementById('modelName').value.trim();
             settings.maxLength = parseInt(document.getElementById('maxLength').value);
             settings.temperature = parseFloat(document.getElementById('temperature').value);
+            
+            // Save API token
+            const apiToken = document.getElementById('apiToken').value.trim();
+            if (apiToken) {
+                localStorage.setItem('hf_api_token', apiToken);
+            }
             
             // Save to localStorage
             localStorage.setItem('pa_service_url', settings.serviceUrl);
