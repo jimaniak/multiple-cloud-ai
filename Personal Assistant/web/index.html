@@ -279,15 +279,16 @@
     </style>
 </head>
 <body>
-    <div class="config-panel">
-        <h3>⚙️ Configuration</h3>
-        <input type="text" id="apiUrl" placeholder="Enter your LLM service URL" value="">
-        <button onclick="saveConfig()">💾 Save Configuration</button>
-        <button onclick="testConnection()">🔍 Test Connection</button>
-        <div id="configStatus" class="config-status">
-            ℹ️ Enter your service URL to get started
+            <div class="config-panel">
+            <h3>⚙️ Configuration</h3>
+            <input type="url" id="apiUrl" placeholder="Enter your LLM service URL" value="">
+            <input type="password" id="apiToken" placeholder="Enter API token (hf_...)" value="">
+            <button onclick="saveConfig()">💾 Save Configuration</button>
+            <button onclick="testConnection()">🔍 Test Connection</button>
+            <div id="configStatus" class="config-status">
+                ℹ️ Enter your service URL and API token to get started
+            </div>
         </div>
-    </div>
     
     <div class="chat-container">
         <div class="chat-header">
@@ -353,9 +354,16 @@ To get started, please configure your service URL in the panel above, then ask m
         
         function saveConfig() {
             const url = document.getElementById('apiUrl').value.trim();
+            const token = document.getElementById('apiToken').value.trim();
+            
             if (url) {
                 API_URL = url.endsWith('/') ? url.slice(0, -1) : url;
                 localStorage.setItem('llmApiUrl', API_URL);
+                
+                if (token) {
+                    localStorage.setItem('hf_api_token', token);
+                }
+                
                 updateStatus('💾 Configuration saved!', 'connected');
                 testConnection();
             } else {
@@ -465,17 +473,44 @@ To get started, please configure your service URL in the panel above, then ask m
             showTyping(true);
             
             try {
-                const response = await fetch(`${API_URL}/api/generate`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: 'phi3:mini', // This should match your deployed model
-                        prompt: message,
-                        stream: false
-                    })
-                });
+                // Check if it's a Hugging Face endpoint
+                const isHuggingFace = API_URL.includes('huggingface.cloud');
+                const apiToken = localStorage.getItem('hf_api_token');
+                
+                let response;
+                if (isHuggingFace) {
+                    // Hugging Face format
+                    response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiToken}`
+                        },
+                        body: JSON.stringify({
+                            model: "tgi",
+                            messages: [
+                                {
+                                    role: "user", 
+                                    content: message
+                                }
+                            ],
+                            stream: false
+                        })
+                    });
+                } else {
+                    // Ollama format
+                    response = await fetch(`${API_URL}/api/generate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: 'phi3:mini',
+                            prompt: message,
+                            stream: false
+                        })
+                    });
+                }
                 
                 if (!response.ok) {
                     if (response.status === 401) {
