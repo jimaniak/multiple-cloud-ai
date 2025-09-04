@@ -1,0 +1,30 @@
+# Environment files (contains sensitive data)
+config.env
+.env
+*.env
+
+# Specific sensitive files
+**/config.env
+**/.env
+
+# Google Cloud credentials
+*.json
+service-account-*.json
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

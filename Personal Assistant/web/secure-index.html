@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔒 Secure Personal Assistant AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-header h1 {
+            font-size: 24px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            display: flex;
+            gap: 10px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        
+        .message.assistant {
+            align-self: flex-start;
+        }
+        
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+        
+        .message.assistant .message-content {
+            background: #f1f3f4;
+            color: #333;
+        }
+        
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .message.user .message-avatar {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .message.assistant .message-avatar {
+            background: #10b981;
+            color: white;
+        }
+        
+        .chat-input {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .chat-input input:focus {
+            border-color: #667eea;
+        }
+        
+        .chat-input button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        .chat-input button:hover {
+            background: #5a67d8;
+        }
+        
+        .chat-input button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .google-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        
+        .google-btn:hover {
+            background: #3367d6;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            color: #6b7280;
+            font-style: italic;
+            padding: 10px 0;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .error-message {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #fecaca;
+        }
+        
+        .config-section {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .config-section h3 {
+            margin-bottom: 15px;
+            color: #374151;
+        }
+        
+        .config-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .config-section button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .login-container {
+                border-radius: 0;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+        }
+    </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginContainer" class="login-container">
+        <h1>🔒 Secure Personal Assistant</h1>
+        <p style="margin: 20px 0; color: #6b7280;">
+            Sign in with your Google account to access your private AI assistant
+        </p>
+        
+        <div id="g_id_onload"
+             data-client_id="YOUR_GOOGLE_CLIENT_ID"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="pill"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
+        
+        <div class="config-section">
+            <h3>⚙️ Configuration</h3>
+            <input type="text" id="googleClientId" placeholder="Google Client ID" 
+                   value="YOUR_GOOGLE_CLIENT_ID">
+            <input type="text" id="llmServiceUrl" placeholder="LLM Service URL" 
+                   value="">
+            <button onclick="saveConfig()">💾 Save Configuration</button>
+        </div>
+        
+        <p style="margin-top: 20px; font-size: 12px; color: #9ca3af;">
+            🔐 Your conversations are private and secure
+        </p>
+    </div>
+    
+    <!-- Chat Interface (hidden initially) -->
+    <div id="chatContainer" class="chat-container hidden">
+        <div class="chat-header">
+            <h1>🤖 Personal Assistant AI</h1>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <span id="userName">User</span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                    Hello! I'm your secure personal AI assistant. Only you can access this conversation. 
+                    How can I help you today?
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="message-avatar">AI</div>
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <span>AI is thinking...</span>
+        </div>
+        
+        <div class="chat-input">
+            <input 
+                type="text" 
+                id="messageInput" 
+                placeholder="Ask me anything..." 
+                onkeypress="handleKeyPress(event)"
+            >
+            <button onclick="sendMessage()" id="sendButton">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let authToken = null;
+        let LLM_SERVICE_URL = localStorage.getItem('llmServiceUrl') || '';
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved configuration
+            const savedClientId = localStorage.getItem('googleClientId');
+            const savedServiceUrl = localStorage.getItem('llmServiceUrl');
+            
+            if (savedClientId) {
+                document.getElementById('googleClientId').value = savedClientId;
+                updateGoogleSignIn(savedClientId);
+            }
+            
+            if (savedServiceUrl) {
+                document.getElementById('llmServiceUrl').value = savedServiceUrl;
+                LLM_SERVICE_URL = savedServiceUrl;
+            }
+        });
+        
+        function saveConfig() {
+            const clientId = document.getElementById('googleClientId').value.trim();
+            const serviceUrl = document.getElementById('llmServiceUrl').value.trim();
+            
+            if (clientId && clientId !== 'YOUR_GOOGLE_CLIENT_ID') {
+                localStorage.setItem('googleClientId', clientId);
+                updateGoogleSignIn(clientId);
+            }
+            
+            if (serviceUrl) {
+                LLM_SERVICE_URL = serviceUrl.endsWith('/') ? serviceUrl.slice(0, -1) : serviceUrl;
+                localStorage.setItem('llmServiceUrl', LLM_SERVICE_URL);
+            }
+            
+            alert('✅ Configuration saved! Please refresh the page if you updated the Google Client ID.');
+        }
+        
+        function updateGoogleSignIn(clientId) {
+            const onloadDiv = document.getElementById('g_id_onload');
+            onloadDiv.setAttribute('data-client_id', clientId);
+        }
+        
+        // Handle Google Sign-In response
+        function handleCredentialResponse(response) {
+            // Decode the JWT token to get user info
+            const userInfo = parseJwt(response.credential);
+            
+            currentUser = {
+                id: userInfo.sub,
+                name: userInfo.name,
+                email: userInfo.email,
+                picture: userInfo.picture
+            };
+            
+            authToken = response.credential;
+            
+            // Show chat interface
+            showChatInterface();
+        }
+        
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                console.error('Error parsing JWT:', e);
+                return {};
+            }
+        }
+        
+        function showChatInterface() {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('chatContainer').classList.remove('hidden');
+            
+            // Update user info in header
+            document.getElementById('userName').textContent = currentUser.name;
+            if (currentUser.picture) {
+                document.getElementById('userAvatar').innerHTML = 
+                    `<img src="${currentUser.picture}" style="width:100%;height:100%;border-radius:50%;">`;
+            }
+            
+            // Focus on message input
+            document.getElementById('messageInput').focus();
+        }
+        
+        function logout() {
+            currentUser = null;
+            authToken = null;
+            
+            // Show login screen
+            document.getElementById('chatContainer').classList.add('hidden');
+            document.getElementById('loginContainer').classList.remove('hidden');
+            
+            // Clear chat messages
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = `
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        Hello! I'm your secure personal AI assistant. Only you can access this conversation. 
+                        How can I help you today?
+                    </div>
+                </div>
+            `;
+        }
+        
+        function addMessage(content, isUser = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isUser ? (currentUser.picture ? 
+                    `<img src="${currentUser.picture}" style="width:100%;height:100%;border-radius:50%;">` : 
+                    '👤') : 'AI'}</div>
+                <div class="message-content">${content}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function showTyping(show = true) {
+            const typingIndicator = document.getElementById('typingIndicator');
+            const sendButton = document.getElementById('sendButton');
+            const messageInput = document.getElementById('messageInput');
+            
+            typingIndicator.style.display = show ? 'flex' : 'none';
+            sendButton.disabled = show;
+            messageInput.disabled = show;
+            
+            if (show) {
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+        
+        function showError(message) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = `❌ Error: ${message}`;
+            messagesContainer.appendChild(errorDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            if (!LLM_SERVICE_URL) {
+                showError('Please configure your LLM service URL first');
+                return;
+            }
+            
+            if (!authToken) {
+                showError('Please sign in first');
+                return;
+            }
+            
+            // Add user message
+            addMessage(message, true);
+            messageInput.value = '';
+            
+            // Show typing indicator
+            showTyping(true);
+            
+            try {
+                const response = await fetch(`${LLM_SERVICE_URL}/api/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        model: 'phi3:mini',
+                        prompt: `User: ${currentUser.name} (${currentUser.email})\nQuestion: ${message}`,
+                        stream: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Hide typing indicator
+                showTyping(false);
+                
+                // Add AI response
+                if (data.response) {
+                    addMessage(data.response);
+                } else {
+                    showError('No response received from the AI');
+                }
+                
+            } catch (error) {
+                showTyping(false);
+                console.error('Error:', error);
+                
+                if (error.message.includes('401')) {
+                    showError('Authentication failed. Please sign in again.');
+                    logout();
+                } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showError('Cannot connect to your LLM service. Please check the URL and make sure your service is running.');
+                } else {
+                    showError(`Failed to get response: ${error.message}`);
+                }
+            }
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>

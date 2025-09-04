@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PA Assistant">
+    <title>🤖 Personal Assistant - Lowrys.org</title>
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #1f2937;
+                --bg-secondary: #111827;
+                --text-primary: #f9fafb;
+                --text-secondary: #9ca3af;
+                --border: #374151;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 100vw;
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: max(env(safe-area-inset-top), 12px) 20px 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            z-index: 100;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.disconnected {
+            background: var(--error);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .header-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 16px;
+        }
+        
+        .header-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* Chat Messages */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: max(env(safe-area-inset-bottom), 16px);
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            max-width: 100%;
+        }
+        
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            font-weight: 600;
+        }
+        
+        .message.user .message-avatar {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .message.assistant .message-avatar {
+            background: var(--success);
+            color: white;
+        }
+        
+        .message.system .message-avatar {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .message-content {
+            max-width: calc(100% - 48px);
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        
+        .message.user .message-content {
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.assistant .message-content {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message.system .message-content {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+        }
+        
+        /* Tool Usage Indicators */
+        .tool-usage {
+            display: flex;
+            gap: 8px;
+            margin: 8px 0;
+            flex-wrap: wrap;
+        }
+        
+        .tool-badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            margin: 16px;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        
+        /* Input Area */
+        .input-container {
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border);
+            padding: 12px 16px max(env(safe-area-inset-bottom), 12px) 16px;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        
+        .message-input {
+            flex: 1;
+            min-height: 40px;
+            max-height: 120px;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 16px;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            line-height: 1.4;
+        }
+        
+        .message-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .send-button {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .send-button:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Tools Panel */
+        .tools-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 200;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .tools-panel.open {
+            transform: translateY(0);
+        }
+        
+        .tools-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            padding: 16px;
+        }
+        
+        .tool-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tool-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+        
+        .tool-card.active {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        .tool-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .tool-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .tool-description {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        /* Settings Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            padding: 20px;
+        }
+        
+        .modal-overlay.open {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            padding: 8px 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .quick-action {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-action:hover {
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* Error/Success Messages */
+        .toast {
+            position: fixed;
+            top: max(env(safe-area-inset-top), 20px);
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: var(--shadow-lg);
+            z-index: 400;
+            transition: transform 0.3s ease;
+            max-width: calc(100vw - 40px);
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .toast.error {
+            border-color: var(--error);
+            background: rgba(239, 68, 68, 0.05);
+        }
+        
+        .toast.success {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .app-header {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+            
+            .header-title {
+                font-size: 16px;
+            }
+            
+            .messages-container {
+                padding: 12px;
+            }
+            
+            .message-content {
+                font-size: 14px;
+                padding: 10px 14px;
+            }
+            
+            .tools-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+                padding: 12px;
+            }
+            
+            .tool-card {
+                padding: 12px;
+            }
+        }
+        
+        /* PWA Styles */
+        @media (display-mode: standalone) {
+            .app-header {
+                padding-top: max(env(safe-area-inset-top), 20px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <h1 class="header-title">PA Assistant</h1>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="toggleTools()" id="toolsBtn">🛠️</button>
+                <button class="header-btn" onclick="openSettings()">⚙️</button>
+                <button class="header-btn" onclick="clearChat()">🗑️</button>
+            </div>
+        </header>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="quick-action" onclick="quickPrompt('What\'s on my calendar today?')">📅 Calendar</div>
+            <div class="quick-action" onclick="quickPrompt('Check my emails')">📧 Email</div>
+            <div class="quick-action" onclick="quickPrompt('What\'s the weather?')">🌤️ Weather</div>
+            <div class="quick-action" onclick="quickPrompt('Latest news')">📰 News</div>
+            <div class="quick-action" onclick="quickPrompt('Create a task')">✅ Tasks</div>
+            <div class="quick-action" onclick="quickPrompt('Take notes')">📝 Notes</div>
+        </div>
+
+        <!-- Messages -->
+        <div class="messages-container" id="messagesContainer">
+            <div class="message assistant">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    Welcome to your Personal Assistant! I'm powered by your private LLM and have access to powerful tools.
+
+I can help you with:
+• 📅 Calendar management
+• 📧 Email assistance  
+• 🌐 Web searches
+• 📊 Data analysis
+• 📝 Note-taking
+• ✅ Task management
+• 🧮 Calculations
+• 🎨 Creative tasks
+
+Tap the tools button (🛠️) to see available tools, or just start chatting!
+                </div>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="message-avatar">🤖</div>
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <span style="color: var(--text-secondary); font-size: 14px;">Assistant is thinking...</span>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    class="message-input" 
+                    id="messageInput" 
+                    placeholder="Ask me anything..."
+                    rows="1"
+                ></textarea>
+                <button class="send-button" onclick="sendMessage()" id="sendButton">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools Panel -->
+    <div class="tools-panel" id="toolsPanel">
+        <div class="tools-header">
+            <h3>Available Tools</h3>
+            <button class="close-btn" onclick="toggleTools()">×</button>
+        </div>
+        <div class="tools-grid" id="toolsGrid">
+            <div class="tool-card" data-tool="web_search">
+                <div class="tool-icon">🔍</div>
+                <div class="tool-name">Web Search</div>
+                <div class="tool-description">Search the internet</div>
+            </div>
+            <div class="tool-card" data-tool="calculator">
+                <div class="tool-icon">🧮</div>
+                <div class="tool-name">Calculator</div>
+                <div class="tool-description">Math & calculations</div>
+            </div>
+            <div class="tool-card" data-tool="calendar">
+                <div class="tool-icon">📅</div>
+                <div class="tool-name">Calendar</div>
+                <div class="tool-description">Schedule management</div>
+            </div>
+            <div class="tool-card" data-tool="email">
+                <div class="tool-icon">📧</div>
+                <div class="tool-name">Email</div>
+                <div class="tool-description">Email assistance</div>
+            </div>
+            <div class="tool-card" data-tool="weather">
+                <div class="tool-icon">🌤️</div>
+                <div class="tool-name">Weather</div>
+                <div class="tool-description">Weather information</div>
+            </div>
+            <div class="tool-card" data-tool="notes">
+                <div class="tool-icon">📝</div>
+                <div class="tool-name">Notes</div>
+                <div class="tool-description">Take & manage notes</div>
+            </div>
+            <div class="tool-card" data-tool="tasks">
+                <div class="tool-icon">✅</div>
+                <div class="tool-name">Tasks</div>
+                <div class="tool-description">Task management</div>
+            </div>
+            <div class="tool-card" data-tool="code">
+                <div class="tool-icon">💻</div>
+                <div class="tool-name">Code</div>
+                <div class="tool-description">Code generation</div>
+            </div>
+            <div class="tool-card" data-tool="image">
+                <div class="tool-icon">🎨</div>
+                <div class="tool-name">Image</div>
+                <div class="tool-description">Image analysis</div>
+            </div>
+            <div class="tool-card" data-tool="translate">
+                <div class="tool-icon">🌍</div>
+                <div class="tool-name">Translate</div>
+                <div class="tool-description">Language translation</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Settings</h3>
+                <button class="close-btn" onclick="closeSettings()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">LLM Service URL</label>
+                <input type="url" class="form-input" id="serviceUrl" placeholder="https://your-llm-service.run.app">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Model Name</label>
+                <input type="text" class="form-input" id="modelName" value="phi3:mini">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Max Response Length</label>
+                <input type="number" class="form-input" id="maxLength" value="2000">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Temperature (Creativity)</label>
+                <input type="range" class="form-input" id="temperature" min="0" max="1" step="0.1" value="0.7">
+                <span id="tempValue">0.7</span>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                <button class="btn btn-secondary" onclick="testConnection()">Test Connection</button>
+            </div>
+            
+            <div id="connectionStatus" style="margin-top: 12px; font-size: 14px;"></div>
+        </div>
+    </div>
+
+    <!-- Toast Messages -->
+    <div class="toast" id="toast"></div>
+
+    <!-- PWA Manifest -->
+    <script>
+        // PWA Manifest
+        const manifest = {
+            name: "Personal Assistant - Lowrys.org",
+            short_name: "PA Assistant",
+            description: "Your personal AI assistant with powerful tools",
+            start_url: "/",
+            display: "standalone",
+            background_color: "#667eea",
+            theme_color: "#667eea",
+            icons: [
+                {
+                    src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>",
+                    sizes: "any",
+                    type: "image/svg+xml"
+                }
+            ]
+        };
+        
+        const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        document.querySelector('link[rel="manifest"]').href = manifestURL;
+    </script>
+
+    <script>
+        // Global state
+        let settings = {
+            serviceUrl: localStorage.getItem('pa_service_url') || '',
+            modelName: localStorage.getItem('pa_model_name') || 'phi3:mini',
+            maxLength: parseInt(localStorage.getItem('pa_max_length')) || 2000,
+            temperature: parseFloat(localStorage.getItem('pa_temperature')) || 0.7
+        };
+        
+        let isConnected = false;
+        let activeTools = new Set();
+        let chatHistory = JSON.parse(localStorage.getItem('pa_chat_history') || '[]');
+        
+        // Available tools
+        const tools = {
+            web_search: {
+                name: "Web Search",
+                icon: "🔍",
+                description: "Search the internet for current information",
+                prompt: "I need you to search the web for: "
+            },
+            calculator: {
+                name: "Calculator", 
+                icon: "🧮",
+                description: "Perform mathematical calculations",
+                prompt: "Please calculate: "
+            },
+            calendar: {
+                name: "Calendar",
+                icon: "📅", 
+                description: "Manage calendar and scheduling",
+                prompt: "Help me with my calendar: "
+            },
+            email: {
+                name: "Email",
+                icon: "📧",
+                description: "Compose and manage emails", 
+                prompt: "Help me with email: "
+            },
+            weather: {
+                name: "Weather",
+                icon: "🌤️",
+                description: "Get weather information",
+                prompt: "What's the weather like "
+            },
+            notes: {
+                name: "Notes",
+                icon: "📝",
+                description: "Take and organize notes",
+                prompt: "Help me take notes about: "
+            },
+            tasks: {
+                name: "Tasks", 
+                icon: "✅",
+                description: "Manage tasks and to-dos",
+                prompt: "Help me manage tasks: "
+            },
+            code: {
+                name: "Code",
+                icon: "💻", 
+                description: "Generate and review code",
+                prompt: "Help me with code: "
+            },
+            image: {
+                name: "Image",
+                icon: "🎨",
+                description: "Analyze and describe images",
+                prompt: "Help me with image analysis: "
+            },
+            translate: {
+                name: "Translate",
+                icon: "🌍",
+                description: "Translate between languages", 
+                prompt: "Please translate: "
+            }
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            loadChatHistory();
+            setupEventListeners();
+            checkConnection();
+            
+            // Auto-resize textarea
+            const messageInput = document.getElementById('messageInput');
+            messageInput.addEventListener('input', autoResize);
+        });
+
+        function loadSettings() {
+            document.getElementById('serviceUrl').value = settings.serviceUrl;
+            document.getElementById('modelName').value = settings.modelName;
+            document.getElementById('maxLength').value = settings.maxLength;
+            document.getElementById('temperature').value = settings.temperature;
+            document.getElementById('tempValue').textContent = settings.temperature;
+            
+            // Update temperature display
+            document.getElementById('temperature').addEventListener('input', function(e) {
+                document.getElementById('tempValue').textContent = e.target.value;
+            });
+        }
+
+        function loadChatHistory() {
+            const container = document.getElementById('messagesContainer');
+            // Keep welcome message and load history
+            chatHistory.forEach(msg => {
+                if (msg.role !== 'system') {
+                    addMessageToUI(msg.content, msg.role === 'user', msg.tools);
+                }
+            });
+            scrollToBottom();
+        }
+
+        function setupEventListeners() {
+            // Enter key to send
+            document.getElementById('messageInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Tool selection
+            document.querySelectorAll('.tool-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const tool = this.dataset.tool;
+                    toggleTool(tool);
+                });
+            });
+
+            // Service worker registration
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(console.error);
+            }
+        }
+
+        async function checkConnection() {
+            if (!settings.serviceUrl) {
+                updateConnectionStatus(false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${settings.serviceUrl}/api/tags`, {
+                    method: 'GET',
+                    timeout: 5000
+                });
+                
+                if (response.ok) {
+                    updateConnectionStatus(true);
+                } else {
+                    updateConnectionStatus(false);
+                }
+            } catch (error) {
+                updateConnectionStatus(false);
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const indicator = document.getElementById('statusIndicator');
+            indicator.className = `status-indicator ${connected ? '' : 'disconnected'}`;
+        }
+
+        function autoResize() {
+            const textarea = document.getElementById('messageInput');
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        function toggleTools() {
+            const panel = document.getElementById('toolsPanel');
+            panel.classList.toggle('open');
+        }
+
+        function toggleTool(toolName) {
+            const card = document.querySelector(`[data-tool="${toolName}"]`);
+            
+            if (activeTools.has(toolName)) {
+                activeTools.delete(toolName);
+                card.classList.remove('active');
+            } else {
+                activeTools.add(toolName);
+                card.classList.add('active');
+            }
+        }
+
+        function quickPrompt(prompt) {
+            document.getElementById('messageInput').value = prompt;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            if (!settings.serviceUrl) {
+                showToast('Please configure your LLM service URL in settings', 'error');
+                return;
+            }
+
+            // Add user message
+            addMessageToUI(message, true);
+            saveChatMessage('user', message);
+            
+            input.value = '';
+            autoResize();
+            
+            // Show typing indicator
+            showTyping(true);
+            
+            try {
+                // Prepare prompt with tools context
+                let enhancedPrompt = message;
+                const toolsUsed = Array.from(activeTools);
+                
+                if (toolsUsed.length > 0) {
+                    const toolContext = toolsUsed.map(tool => 
+                        `[${tools[tool].name}]: ${tools[tool].description}`
+                    ).join('\n');
+                    
+                    enhancedPrompt = `Available tools:\n${toolContext}\n\nUser request: ${message}`;
+                }
+
+                const response = await fetch(`${settings.serviceUrl}/api/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: settings.modelName,
+                        prompt: enhancedPrompt,
+                        stream: false,
+                        options: {
+                            temperature: settings.temperature,
+                            max_tokens: settings.maxLength
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // Hide typing indicator
+                showTyping(false);
+                
+                if (data.response) {
+                    addMessageToUI(data.response, false, toolsUsed);
+                    saveChatMessage('assistant', data.response, toolsUsed);
+                } else {
+                    throw new Error('No response received');
+                }
+
+            } catch (error) {
+                showTyping(false);
+                console.error('Error:', error);
+                
+                let errorMsg = 'Failed to get response from assistant';
+                if (error.message.includes('fetch')) {
+                    errorMsg = 'Cannot connect to your LLM service. Please check your settings.';
+                    updateConnectionStatus(false);
+                }
+                
+                showToast(errorMsg, 'error');
+            }
+        }
+
+        function addMessageToUI(content, isUser, toolsUsed = []) {
+            const container = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            
+            let toolBadges = '';
+            if (toolsUsed && toolsUsed.length > 0) {
+                toolBadges = `
+                    <div class="tool-usage">
+                        ${toolsUsed.map(tool => `
+                            <span class="tool-badge">
+                                ${tools[tool].icon} ${tools[tool].name}
+                            </span>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
+                <div style="max-width: calc(100% - 48px);">
+                    <div class="message-content">${content}</div>
+                    ${toolBadges}
+                </div>
+            `;
+            
+            container.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function saveChatMessage(role, content, tools = []) {
+            chatHistory.push({ role, content, tools, timestamp: Date.now() });
+            
+            // Keep only last 50 messages
+            if (chatHistory.length > 50) {
+                chatHistory = chatHistory.slice(-50);
+            }
+            
+            localStorage.setItem('pa_chat_history', JSON.stringify(chatHistory));
+        }
+
+        function showTyping(show) {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.style.display = show ? 'flex' : 'none';
+            
+            const sendButton = document.getElementById('sendButton');
+            sendButton.disabled = show;
+            
+            if (show) scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 100);
+        }
+
+        function clearChat() {
+            if (confirm('Clear all chat history?')) {
+                chatHistory = [];
+                localStorage.removeItem('pa_chat_history');
+                
+                const container = document.getElementById('messagesContainer');
+                // Keep only the welcome message
+                const welcomeMessage = container.querySelector('.message.assistant');
+                container.innerHTML = '';
+                container.appendChild(welcomeMessage);
+                
+                showToast('Chat history cleared', 'success');
+            }
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('open');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('open');
+        }
+
+        function saveSettings() {
+            settings.serviceUrl = document.getElementById('serviceUrl').value.trim();
+            settings.modelName = document.getElementById('modelName').value.trim();
+            settings.maxLength = parseInt(document.getElementById('maxLength').value);
+            settings.temperature = parseFloat(document.getElementById('temperature').value);
+            
+            // Save to localStorage
+            localStorage.setItem('pa_service_url', settings.serviceUrl);
+            localStorage.setItem('pa_model_name', settings.modelName);
+            localStorage.setItem('pa_max_length', settings.maxLength);
+            localStorage.setItem('pa_temperature', settings.temperature);
+            
+            closeSettings();
+            checkConnection();
+            showToast('Settings saved successfully', 'success');
+        }
+
+        async function testConnection() {
+            const url = document.getElementById('serviceUrl').value.trim();
+            if (!url) {
+                showToast('Please enter a service URL', 'error');
+                return;
+            }
+
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.textContent = 'Testing connection...';
+            statusDiv.style.color = 'var(--text-secondary)';
+
+            try {
+                const response = await fetch(`${url}/api/tags`, {
+                    method: 'GET',
+                    timeout: 10000
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.textContent = '✅ Connection successful!';
+                    statusDiv.style.color = 'var(--success)';
+                    
+                    if (data.models && data.models.length > 0) {
+                        const modelSelect = document.getElementById('modelName');
+                        const currentValue = modelSelect.value;
+                        
+                        // Update model suggestions (in a real app, you'd create a dropdown)
+                        statusDiv.textContent += ` Found ${data.models.length} models.`;
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusDiv.textContent = '❌ Connection failed. Check URL and service status.';
+                statusDiv.style.color = 'var(--error)';
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // PWA Installation
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button or prompt
+            showToast('Add to home screen for the best experience!', 'info');
+        });
+
+        // Handle app installation
+        window.addEventListener('appinstalled', () => {
+            showToast('Personal Assistant installed successfully!', 'success');
+            deferredPrompt = null;
+        });
+    </script>
+</body>
+</html>

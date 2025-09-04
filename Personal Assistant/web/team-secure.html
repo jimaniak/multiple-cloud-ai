@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏢 Team AI Assistant - Secure Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 450px;
+            width: 100%;
+        }
+        
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .team-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .team-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .role-admin { background: rgba(34, 197, 94, 0.3); }
+        .role-user { background: rgba(59, 130, 246, 0.3); }
+        .role-viewer { background: rgba(156, 163, 175, 0.3); }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .form-group {
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .totp-input {
+            text-align: center;
+            font-size: 24px;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .auth-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .auth-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        
+        .auth-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .auth-btn.primary:hover {
+            background: #5a67d8;
+        }
+        
+        .auth-btn.secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .auth-btn.secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .auth-btn.google {
+            background: #4285f4;
+            color: white;
+        }
+        
+        .auth-btn.microsoft {
+            background: #0078d4;
+            color: white;
+        }
+        
+        .auth-btn.sso {
+            background: #059669;
+            color: white;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e7eb;
+        }
+        
+        .divider span {
+            padding: 0 15px;
+        }
+        
+        .qr-code {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            margin: 20px 0;
+        }
+        
+        .setup-steps {
+            text-align: left;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .setup-steps ol {
+            margin-left: 20px;
+        }
+        
+        .setup-steps li {
+            margin: 8px 0;
+            color: #374151;
+        }
+        
+        .secret-key {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        
+        .team-stats {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            display: flex;
+            gap: 10px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        
+        .message.assistant {
+            align-self: flex-start;
+        }
+        
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+        
+        .message.assistant .message-content {
+            background: #f1f3f4;
+            color: #333;
+        }
+        
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .message.user .message-avatar {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .message.assistant .message-avatar {
+            background: #10b981;
+            color: white;
+        }
+        
+        .chat-input {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .chat-input button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .error-message {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #fecaca;
+        }
+        
+        .success-message {
+            background: #f0fdf4;
+            color: #16a34a;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #bbf7d0;
+        }
+        
+        @media (max-width: 768px) {
+            .auth-container, .chat-container {
+                border-radius: 0;
+                height: 100vh;
+            }
+            
+            .team-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login/Setup Screen -->
+    <div id="authContainer" class="auth-container">
+        <!-- Initial Login -->
+        <div id="loginScreen">
+            <h1>🏢 Team AI Assistant</h1>
+            <p style="margin: 20px 0; color: #6b7280;">
+                Secure team access with multi-factor authentication
+            </p>
+            
+            <div class="auth-methods">
+                <button class="auth-btn google" onclick="loginWithGoogle()">
+                    <span>🔐</span> Continue with Google
+                </button>
+                
+                <button class="auth-btn microsoft" onclick="loginWithMicrosoft()">
+                    <span>🔐</span> Continue with Microsoft
+                </button>
+                
+                <button class="auth-btn sso" onclick="loginWithSSO()">
+                    <span>🔐</span> Single Sign-On (SSO)
+                </button>
+                
+                <div class="divider">
+                    <span>or</span>
+                </div>
+                
+                <button class="auth-btn secondary" onclick="showUsernameLogin()">
+                    <span>👤</span> Username + Authenticator
+                </button>
+            </div>
+        </div>
+        
+        <!-- Username + Password -->
+        <div id="usernameScreen" class="hidden">
+            <h2>👤 Team Login</h2>
+            <p style="margin: 20px 0; color: #6b7280;">
+                Enter your team credentials
+            </p>
+            
+            <form class="auth-form" onsubmit="submitCredentials(event)">
+                <div class="form-group">
+                    <label for="username">Username or Email</label>
+                    <input type="text" id="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                
+                <button type="submit" class="auth-btn primary">
+                    Continue to 2FA
+                </button>
+                
+                <button type="button" class="auth-btn secondary" onclick="showLoginScreen()">
+                    ← Back to Login Options
+                </button>
+            </form>
+        </div>
+        
+        <!-- TOTP Setup (First Time) -->
+        <div id="totpSetupScreen" class="hidden">
+            <h2>🔐 Setup Authenticator</h2>
+            <p style="margin: 20px 0; color: #6b7280;">
+                Set up your authenticator app for secure access
+            </p>
+            
+            <div class="setup-steps">
+                <ol>
+                    <li>Install an authenticator app:
+                        <ul style="margin-top: 5px;">
+                            <li>Google Authenticator</li>
+                            <li>Microsoft Authenticator</li>
+                            <li>Authy</li>
+                            <li>1Password</li>
+                        </ul>
+                    </li>
+                    <li>Scan this QR code with your app:</li>
+                </ol>
+            </div>
+            
+            <div class="qr-code" id="qrCodeContainer">
+                <!-- QR code will be generated here -->
+                <div style="width: 200px; height: 200px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                    QR Code Here
+                </div>
+            </div>
+            
+            <div class="setup-steps">
+                <ol start="3">
+                    <li>Or manually enter this secret key:</li>
+                </ol>
+            </div>
+            
+            <div class="secret-key" id="secretKey">
+                JBSWY3DPEHPK3PXP
+            </div>
+            
+            <div class="setup-steps">
+                <ol start="4">
+                    <li>Enter the 6-digit code from your app:</li>
+                </ol>
+            </div>
+            
+            <form class="auth-form" onsubmit="verifyTOTPSetup(event)">
+                <div class="form-group">
+                    <input type="text" id="setupTotpCode" class="totp-input" 
+                           placeholder="000000" maxlength="6" pattern="[0-9]{6}" required>
+                </div>
+                
+                <button type="submit" class="auth-btn primary">
+                    ✅ Complete Setup
+                </button>
+            </form>
+        </div>
+        
+        <!-- TOTP Verification -->
+        <div id="totpVerifyScreen" class="hidden">
+            <h2>🔐 Enter Authentication Code</h2>
+            <p style="margin: 20px 0; color: #6b7280;">
+                Enter the 6-digit code from your authenticator app
+            </p>
+            
+            <form class="auth-form" onsubmit="verifyTOTP(event)">
+                <div class="form-group">
+                    <input type="text" id="totpCode" class="totp-input" 
+                           placeholder="000000" maxlength="6" pattern="[0-9]{6}" required>
+                </div>
+                
+                <button type="submit" class="auth-btn primary">
+                    🔓 Access Team Assistant
+                </button>
+                
+                <button type="button" class="auth-btn secondary" onclick="showLoginScreen()">
+                    ← Use Different Login Method
+                </button>
+            </form>
+            
+            <p style="margin-top: 20px; font-size: 12px; color: #9ca3af;">
+                Code refreshes every 30 seconds
+            </p>
+        </div>
+    </div>
+    
+    <!-- Team Chat Interface -->
+    <div id="teamChatContainer" class="chat-container hidden">
+        <div class="team-header">
+            <div class="team-info">
+                <h1>🤖 Team AI Assistant</h1>
+                <div class="user-badge" id="userRole">
+                    <span id="userName">User</span>
+                    <span id="roleLabel">• Member</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="team-stats" id="teamStats">
+                    <span>👥 5 users</span>
+                    <span>💬 1,247 queries today</span>
+                </div>
+                <button class="auth-btn secondary" onclick="logout()" style="padding: 6px 12px; font-size: 12px;">
+                    Logout
+                </button>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                    Welcome to your secure team AI assistant! 🎉
+                    
+I'm here to help your team with:
+• Research and analysis
+• Document creation
+• Code review and generation
+• Meeting summaries
+• Project planning
+
+Your conversations are private and secure. How can I assist your team today?
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input 
+                type="text" 
+                id="teamMessageInput" 
+                placeholder="Ask the team assistant anything..." 
+                onkeypress="handleTeamKeyPress(event)"
+            >
+            <button onclick="sendTeamMessage()" id="teamSendButton">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let userRole = 'user'; // admin, user, viewer
+        let authToken = null;
+        let totpSecret = null;
+        
+        // Mock team data (in real implementation, this would come from your backend)
+        const teamData = {
+            users: 5,
+            dailyQueries: 1247,
+            teamName: "Development Team"
+        };
+        
+        // Authentication Methods
+        function showLoginScreen() {
+            hideAllScreens();
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+        
+        function showUsernameLogin() {
+            hideAllScreens();
+            document.getElementById('usernameScreen').classList.remove('hidden');
+        }
+        
+        function hideAllScreens() {
+            const screens = ['loginScreen', 'usernameScreen', 'totpSetupScreen', 'totpVerifyScreen'];
+            screens.forEach(screen => {
+                document.getElementById(screen).classList.add('hidden');
+            });
+        }
+        
+        // OAuth Login Methods
+        function loginWithGoogle() {
+            showMessage('🔄 Redirecting to Google...', 'success');
+            // In real implementation: window.location.href = '/auth/google';
+            setTimeout(() => {
+                mockOAuthSuccess('google', 'John Doe', 'john@company.com');
+            }, 1500);
+        }
+        
+        function loginWithMicrosoft() {
+            showMessage('🔄 Redirecting to Microsoft...', 'success');
+            // In real implementation: window.location.href = '/auth/microsoft';
+            setTimeout(() => {
+                mockOAuthSuccess('microsoft', 'Jane Smith', 'jane@company.com');
+            }, 1500);
+        }
+        
+        function loginWithSSO() {
+            showMessage('🔄 Redirecting to SSO provider...', 'success');
+            // In real implementation: window.location.href = '/auth/sso';
+            setTimeout(() => {
+                mockOAuthSuccess('sso', 'Team Member', 'member@company.com');
+            }, 1500);
+        }
+        
+        function mockOAuthSuccess(provider, name, email) {
+            currentUser = { name, email, provider };
+            // After OAuth, still require TOTP
+            showTOTPVerification();
+        }
+        
+        // Username/Password Login
+        function submitCredentials(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Mock credential validation
+            if (username && password) {
+                currentUser = { name: username, email: username };
+                
+                // Check if user has TOTP setup (mock check)
+                const hasTotp = localStorage.getItem(`totp_${username}`);
+                if (hasTotp) {
+                    showTOTPVerification();
+                } else {
+                    showTOTPSetup();
+                }
+            } else {
+                showMessage('Please enter both username and password', 'error');
+            }
+        }
+        
+        // TOTP Setup
+        function showTOTPSetup() {
+            hideAllScreens();
+            document.getElementById('totpSetupScreen').classList.remove('hidden');
+            
+            // Generate TOTP secret (in real app, this comes from server)
+            totpSecret = generateTOTPSecret();
+            document.getElementById('secretKey').textContent = totpSecret;
+            
+            // Generate QR code (in real app, use a QR library)
+            generateQRCode();
+        }
+        
+        function generateTOTPSecret() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let secret = '';
+            for (let i = 0; i < 16; i++) {
+                secret += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return secret;
+        }
+        
+        function generateQRCode() {
+            const qrContainer = document.getElementById('qrCodeContainer');
+            const serviceName = encodeURIComponent('Team AI Assistant');
+            const accountName = encodeURIComponent(currentUser.email || currentUser.name);
+            const otpUrl = `otpauth://totp/${serviceName}:${accountName}?secret=${totpSecret}&issuer=${serviceName}`;
+            
+            // In real implementation, use a QR code library like qrcode.js
+            qrContainer.innerHTML = `
+                <div style="width: 200px; height: 200px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 2px dashed #d1d5db;">
+                    <div style="text-align: center; color: #6b7280;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">📱</div>
+                        <div style="font-size: 12px;">QR Code for:<br/>${currentUser.email || currentUser.name}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function verifyTOTPSetup(event) {
+            event.preventDefault();
+            const code = document.getElementById('setupTotpCode').value;
+            
+            // Mock TOTP verification (in real app, verify on server)
+            if (code.length === 6 && /^\d+$/.test(code)) {
+                // Save TOTP setup
+                localStorage.setItem(`totp_${currentUser.name}`, totpSecret);
+                showMessage('✅ Authenticator setup complete!', 'success');
+                
+                setTimeout(() => {
+                    showTeamChat();
+                }, 1500);
+            } else {
+                showMessage('Invalid code. Please try again.', 'error');
+            }
+        }
+        
+        // TOTP Verification
+        function showTOTPVerification() {
+            hideAllScreens();
+            document.getElementById('totpVerifyScreen').classList.remove('hidden');
+        }
+        
+        function verifyTOTP(event) {
+            event.preventDefault();
+            const code = document.getElementById('totpCode').value;
+            
+            // Mock TOTP verification
+            if (code.length === 6 && /^\d+$/.test(code)) {
+                // Generate auth token
+                authToken = 'mock_jwt_token_' + Date.now();
+                showMessage('✅ Authentication successful!', 'success');
+                
+                setTimeout(() => {
+                    showTeamChat();
+                }, 1000);
+            } else {
+                showMessage('Invalid code. Please try again.', 'error');
+            }
+        }
+        
+        // Team Chat Interface
+        function showTeamChat() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('teamChatContainer').classList.remove('hidden');
+            
+            // Update user info
+            document.getElementById('userName').textContent = currentUser.name;
+            updateUserRole();
+            updateTeamStats();
+            
+            // Focus on input
+            document.getElementById('teamMessageInput').focus();
+        }
+        
+        function updateUserRole() {
+            const roleElement = document.getElementById('userRole');
+            const roleLabel = document.getElementById('roleLabel');
+            
+            // Mock role assignment (in real app, comes from server)
+            if (currentUser.email && currentUser.email.includes('admin')) {
+                userRole = 'admin';
+                roleLabel.textContent = '• Admin';
+                roleElement.className = 'user-badge role-admin';
+            } else if (currentUser.provider === 'sso') {
+                userRole = 'user';
+                roleLabel.textContent = '• Member';
+                roleElement.className = 'user-badge role-user';
+            } else {
+                userRole = 'viewer';
+                roleLabel.textContent = '• Viewer';
+                roleElement.className = 'user-badge role-viewer';
+            }
+        }
+        
+        function updateTeamStats() {
+            const statsElement = document.getElementById('teamStats');
+            statsElement.innerHTML = `
+                <span>👥 ${teamData.users} users</span>
+                <span>💬 ${teamData.dailyQueries} queries today</span>
+            `;
+        }
+        
+        function sendTeamMessage() {
+            const input = document.getElementById('teamMessageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addTeamMessage(message, true);
+            input.value = '';
+            
+            // Mock AI response (in real app, call your LLM API)
+            setTimeout(() => {
+                const responses = [
+                    `Thanks for your question! As a ${userRole} on the ${teamData.teamName}, I can help you with that.`,
+                    "I'm processing your request. Based on your team's context, here's what I found...",
+                    "Great question! Let me analyze this for your team and provide some insights.",
+                ];
+                const response = responses[Math.floor(Math.random() * responses.length)];
+                addTeamMessage(response, false);
+            }, 1000);
+        }
+        
+        function addTeamMessage(content, isUser) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isUser ? '👤' : 'AI'}</div>
+                <div class="message-content">${content}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function handleTeamKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendTeamMessage();
+            }
+        }
+        
+        function logout() {
+            currentUser = null;
+            authToken = null;
+            userRole = 'user';
+            
+            document.getElementById('teamChatContainer').classList.add('hidden');
+            document.getElementById('authContainer').classList.remove('hidden');
+            showLoginScreen();
+            
+            // Clear chat
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        Welcome to your secure team AI assistant! 🎉
+                        
+I'm here to help your team with:
+• Research and analysis
+• Document creation
+• Code review and generation
+• Meeting summaries
+• Project planning
+
+Your conversations are private and secure. How can I assist your team today?
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showMessage(message, type) {
+            // Remove existing messages
+            const existing = document.querySelector('.error-message, .success-message');
+            if (existing) existing.remove();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+            messageDiv.textContent = message;
+            
+            const activeScreen = document.querySelector('#authContainer > div:not(.hidden)');
+            if (activeScreen) {
+                activeScreen.appendChild(messageDiv);
+                
+                // Auto-remove success messages
+                if (type === 'success') {
+                    setTimeout(() => messageDiv.remove(), 3000);
+                }
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showLoginScreen();
+        });
+    </script>
+</body>
+</html>
