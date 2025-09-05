@@ -279,16 +279,17 @@
     </style>
 </head>
 <body>
-            <div class="config-panel">
-            <h3>⚙️ Configuration</h3>
-            <input type="url" id="apiUrl" placeholder="Enter your LLM service URL" value="">
-            <input type="password" id="apiToken" placeholder="Enter API token (hf_...)" value="">
-            <button onclick="saveConfig()">💾 Save Configuration</button>
-            <button onclick="testConnection()">🔍 Test Connection</button>
-            <div id="configStatus" class="config-status">
-                ℹ️ Enter your service URL and API token to get started
-            </div>
+                <div class="config-panel" id="configPanel">
+        <button onclick="toggleConfig()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
+        <h3>⚙️ Configuration</h3>
+        <input type="url" id="apiUrl" placeholder="Enter your LLM service URL" value="">
+        <input type="password" id="apiToken" placeholder="Enter API token (hf_...)" value="">
+        <button onclick="saveConfig()">💾 Save Configuration</button>
+        <button onclick="testConnection()">🔍 Test Connection</button>
+        <div id="configStatus" class="config-status">
+            ℹ️ Enter your service URL and API token to get started
         </div>
+    </div>
     
     <div class="chat-container">
         <div class="chat-header">
@@ -685,6 +686,16 @@ To get started, please configure your service URL in the panel above, then ask m
         
         // Auto-focus on message input
         document.getElementById('messageInput').focus();
+        
+        // Toggle configuration panel
+        function toggleConfig() {
+            const configPanel = document.getElementById('configPanel');
+            if (configPanel.style.display === 'none') {
+                configPanel.style.display = 'block';
+            } else {
+                configPanel.style.display = 'none';
+            }
+        }
         
         // Show setup message if no API URL is configured
         if (!API_URL) {
