@@ -505,8 +505,11 @@ To get started, please configure your service URL in the panel above, then ask m
                 
                 let response;
                 if (isHuggingFace) {
-                    // Hugging Face format
-                    response = await fetch(API_URL, {
+                    // Hugging Face format - match their exact API
+                    const baseURL = API_URL.includes('/v1/') ? API_URL.split('/v1/')[0] : API_URL;
+                    const endpoint = `${baseURL}/v1/chat/completions`;
+                    
+                    response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -520,7 +523,8 @@ To get started, please configure your service URL in the panel above, then ask m
                                     content: message
                                 }
                             ],
-                            stream: false
+                            stream: false,
+                            max_tokens: 500
                         })
                     });
                 } else {
@@ -554,7 +558,11 @@ To get started, please configure your service URL in the panel above, then ask m
                 showTyping(false);
                 
                 // Add AI response
-                if (data.response) {
+                if (isHuggingFace && data.choices && data.choices[0]) {
+                    // Hugging Face format
+                    addMessage(data.choices[0].message.content);
+                } else if (data.response) {
+                    // Ollama format
                     addMessage(data.response);
                 } else {
                     showError('No response received from the AI');
