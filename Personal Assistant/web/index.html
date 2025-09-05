@@ -292,8 +292,13 @@
     
     <div class="chat-container">
         <div class="chat-header">
-            <h1>🤖 Personal Assistant AI</h1>
-            <p>Your intelligent companion powered by your own private LLM</p>
+            <div style="flex: 1;">
+                <h1>🤖 Personal Assistant AI</h1>
+                <p>Your intelligent companion powered by your own private LLM</p>
+            </div>
+            <button onclick="toggleConfig()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
+                ⚙️ Settings
+            </button>
         </div>
         
         <div class="chat-messages" id="chatMessages">
@@ -340,16 +345,105 @@ To get started, please configure your service URL in the panel above, then ask m
     </div>
 
     <script>
-        // Configuration
-        let API_URL = localStorage.getItem('llmApiUrl') || '';
+        // Configuration - Will be loaded from secure source
+        const DEFAULT_CONFIG = {
+            apiUrl: '', // Will be set via environment or secure method
+            apiToken: '', // Will be set via environment or secure method
+            modelName: 'tgi',
+            autoConnect: false,
+            preConfigured: false
+        };
+        
+        let API_URL = localStorage.getItem('llmApiUrl') || DEFAULT_CONFIG.apiUrl;
         let isConnected = false;
         
-        // Update the input field with saved URL
-        document.getElementById('apiUrl').value = API_URL;
+        // Auto-configure on first load
+        async function initializeConfig() {
+            try {
+                // Load secure configuration from API
+                const configResponse = await fetch('/api/config');
+                if (configResponse.ok) {
+                    const serverConfig = await configResponse.json();
+                    
+                    // Check if API is pre-configured
+                    const authResponse = await fetch('/api/auth');
+                    if (authResponse.ok) {
+                        const authData = await authResponse.json();
+                        
+                        if (authData.configured) {
+                            // Auto-configure with server settings
+                            API_URL = authData.endpointUrl;
+                            localStorage.setItem('llmApiUrl', API_URL);
+                            
+                            // Pre-fill fields
+                            document.getElementById('apiUrl').value = API_URL;
+                            
+                            // Hide config panel for seamless experience
+                            const configPanel = document.querySelector('.config-panel');
+                            configPanel.style.display = 'none';
+                            
+                            // Auto-test connection
+                            testConnectionWithServerAuth();
+                            return;
+                        }
+                    }
+                }
+                
+                // Fallback to manual configuration
+                const savedUrl = localStorage.getItem('llmApiUrl');
+                const savedToken = localStorage.getItem('hf_api_token');
+                
+                if (savedUrl) document.getElementById('apiUrl').value = savedUrl;
+                if (savedToken) document.getElementById('apiToken').value = savedToken;
+                
+                if (savedUrl && savedToken) {
+                    testConnection();
+                }
+                
+            } catch (error) {
+                console.log('Using manual configuration mode');
+                // Show config panel for manual setup
+            }
+        }
         
-        // Check connection on load
-        if (API_URL) {
-            testConnection();
+        // Test connection using server-side auth
+        async function testConnectionWithServerAuth() {
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: 'server-configured' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.valid) {
+                        isConnected = true;
+                        updateStatus('✅ Connected automatically!', 'connected');
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.log('Server auth failed, using manual mode');
+            }
+            
+            // Fallback to manual configuration
+            const configPanel = document.querySelector('.config-panel');
+            configPanel.style.display = 'block';
+            updateStatus('Please configure your API token', 'error');
+        }
+        
+        // Initialize on load
+        initializeConfig();
+        
+        // Toggle configuration panel
+        function toggleConfig() {
+            const configPanel = document.querySelector('.config-panel');
+            if (configPanel.style.display === 'none') {
+                configPanel.style.display = 'block';
+            } else {
+                configPanel.style.display = 'none';
+            }
         }
         
         function saveConfig() {
